@@ -23,18 +23,53 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 def index():
     return render_template('index.html')
 
+import os
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 @app.route('/upload', methods=['POST'])
 def upload():
     pdf_file = request.files['pdf']
     text = ""
+
     with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
         for page in doc:
             text += page.get_text()
 
-    # Generate MCQs with OpenAI here...
-    # response = client.chat.completions.create(...) etc.
+    input_text = text[:3000]  # Limit for GPT
 
-    return f"<pre>{text[:1000]}</pre>"  # For now, just preview text
+    prompt = f"""
+根據以下繁體中文內容，請生成三題選擇題，並用 HTML 格式輸出，具備良好排版與縮排，格式如下：
+
+<div class="mcq">
+  <h3>問題：____</h3>
+  <ul>
+    <li><strong>A:</strong> ____</li>
+    <li><strong>B:</strong> ____</li>
+    <li><strong>C:</strong> ____</li>
+    <li><strong>D:</strong> ____</li>
+  </ul>
+  <p><strong>答案：</strong> __</p>
+</div>
+
+請不要加入說明文字或其他 HTML 元素。以下是內容：
+{input_text}
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+
+        generated_html = response.choices[0].message.content
+        return render_template("index.html", mcqs=generated_html, error=None)
+
+    except Exception as e:
+        return render_template("index.html", mcqs=None, error=str(e))
+
 
 import os
 
