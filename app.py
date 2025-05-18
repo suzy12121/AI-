@@ -124,30 +124,29 @@ generated_text = response.choices[0].message.content
 print("📝 GPT 回傳內容：\n", generated_text)
 
 # --- Parse into structured MCQs ---
-def parse_mcqs(text):
+from bs4 import BeautifulSoup
+
+def parse_mcqs_from_html(html):
+    soup = BeautifulSoup(html, 'html.parser')
     questions = []
-    blocks = text.strip().split("\n\n")
-    for block in blocks:
-        lines = block.strip().split("\n")
+    for block in soup.find_all('div', class_='mcq'):
         q = {}
-        for line in lines:
-            if line.startswith("問題："):
-                q["問題"] = line.replace("問題：", "").strip()
-            elif line.startswith("A："):
-                q["A"] = line.replace("A：", "").strip()
-            elif line.startswith("B："):
-                q["B"] = line.replace("B：", "").strip()
-            elif line.startswith("C："):
-                q["C"] = line.replace("C：", "").strip()
-            elif line.startswith("D："):
-                q["D"] = line.replace("D：", "").strip()
-            elif line.startswith("答案："):
-                q["答案"] = line.replace("答案：", "").strip()
+        q_text = block.find('h3')
+        q['問題'] = q_text.text.replace('問題：', '').strip() if q_text else ''
+        options = block.find_all('li')
+        for opt in options:
+            label = opt.text.strip()[0]  # "A", "B", etc.
+            q[label] = opt.text.strip()[2:].strip()
+        answer_tag = block.find('p')
+        if answer_tag:
+            q['答案'] = answer_tag.text.replace('答案：', '').strip()
         if len(q) == 6:
             questions.append(q)
     return questions
 
-questions = parse_mcqs(generated_text)
+
+questions = parse_mcqs_from_html(generated_html)
+
 
 import json
 import os
@@ -158,7 +157,9 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # Load credentials from env variable
 service_account_info = json.loads(os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"))
+print("✅ Service account email:", service_account_info["client_email"])
 creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+
 
 gc = gspread.authorize(creds)
 
