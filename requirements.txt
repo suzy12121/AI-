@@ -1,0 +1,5 @@
+flask
+openai
+pymupdf
+gspread
+google-auth
