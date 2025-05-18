@@ -3,3 +3,4 @@ openai
 pymupdf
 gspread
 google-auth
+python-dotenv
