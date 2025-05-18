@@ -36,8 +36,10 @@ def upload():
 
     return f"<pre>{text[:1000]}</pre>"  # For now, just preview text
 
+import os
+
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
 
 # Upload PDF
