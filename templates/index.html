@@ -1,13 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
-    <title>PDF MCQ Generator</title>
+    <meta charset="UTF-8">
+    <title>AI 模擬題生成器</title>
+    <link rel="stylesheet" href="/static/style.css">  
 </head>
 <body>
-    <h1>Upload Traditional Chinese PDF</h1>
-    <form method="post" enctype="multipart/form-data" action="/upload">
-        <input type="file" name="pdf">
-        <button type="submit">Generate MCQs</button>
+    <h1>AI 模擬題生成器</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="pdf" required>
+        <button type="submit">上傳並產生題目</button>
     </form>
+
+    {% if mcqs %}
+        <h2>產生的選擇題：</h2>
+        <div class="output">
+            {{ mcqs|safe }}
+        </div>
+    {% endif %}
 </body>
 </html>
