@@ -112,14 +112,19 @@ def parse_mcqs(text):
 
 questions = parse_mcqs(generated_text)
 
+import json
+import os
 import gspread
 from google.oauth2.service_account import Credentials
 
-# Setup service account credentials
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPES)
+
+# Load credentials from env variable
+service_account_info = json.loads(os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON"))
+creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
 
 gc = gspread.authorize(creds)
+
 
 
 # Open your Google Spreadsheet
