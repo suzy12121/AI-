@@ -9,7 +9,36 @@ Original file is located at
 
 
 import fitz  # PyMuPDF
-from google.colab import files
+from flask import Flask, request, render_template
+import fitz  # pymupdf
+import os
+from openai import OpenAI
+
+app = Flask(__name__)
+
+# Load OpenAI key from env
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    pdf_file = request.files['pdf']
+    text = ""
+    with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
+        for page in doc:
+            text += page.get_text()
+
+    # Generate MCQs with OpenAI here...
+    # response = client.chat.completions.create(...) etc.
+
+    return f"<pre>{text[:1000]}</pre>"  # For now, just preview text
+
+if __name__ == '__main__':
+    app.run()
+
 
 # Upload PDF
 uploaded = files.upload()
@@ -83,14 +112,15 @@ def parse_mcqs(text):
 
 questions = parse_mcqs(generated_text)
 
-from google.colab import auth
 import gspread
-from google.auth import default
+from google.oauth2.service_account import Credentials
 
-# Authenticate
-auth.authenticate_user()
-creds, _ = default()
+# Setup service account credentials
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPES)
+
 gc = gspread.authorize(creds)
+
 
 # Open your Google Spreadsheet
 sheet = gc.open('問題生成器').sheet1  # Must exist
