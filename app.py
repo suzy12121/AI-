@@ -7,8 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1EDCNLZK8iTqDyZJ8ADdqQCrtn5UC1a_0
 """
 
-# Install required libraries
-!pip install --quiet pymupdf openai gspread
 
 import fitz  # PyMuPDF
 from google.colab import files
