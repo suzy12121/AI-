@@ -4,3 +4,4 @@ pymupdf
 gspread
 google-auth
 python-dotenv
+beautifulsoup4
