@@ -1,23 +1,25 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <title>AI 模擬題生成器</title>
-    <link rel="stylesheet" href="/static/style.css">  
-</head>
 <body>
-    <h1>AI 模擬題生成器</h1>
+  <h1>AI 模擬題生成器</h1>
 
-    <form method="POST" action="/upload" enctype="multipart/form-data">
-        <input type="file" name="pdf" required>
-        <button type="submit">上傳並產生題目</button>
-    </form>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="file" name="pdf" required>
+    <button type="submit" id="submit-btn">上傳並產生題目</button>
+  </form>
 
-    {% if mcqs %}
-        <h2>產生的選擇題：</h2>
-        <div class="output">
-            {{ mcqs|safe }}
-        </div>
-    {% endif %}
+  {% if mcqs %}
+    <h2>產生的選擇題：</h2>
+    <div class="output">
+      {{ mcqs|safe }}
+    </div>
+  {% endif %}
+
+  {% if sheet_url %}
+    <p style="text-align: center; margin-top: 20px;">
+      ✅ 題目已成功寫入 <a href="{{ sheet_url }}" target="_blank">Google 試算表</a>
+    </p>
+  {% endif %}
+
+  {% if error %}
+    <p style="color: red; text-align: center;"><strong>⚠️ 錯誤：</strong> {{ error }}</p>
+  {% endif %}
 </body>
-</html>
