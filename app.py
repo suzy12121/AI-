@@ -58,16 +58,19 @@ def upload():
     try:
         print("🚀 Upload started")
 
-        pdf_file = request.files['pdf']
-        print("📄 PDF received:", pdf_file.filename)
+        pdf_file = request.files.get('pdf')
+        print("📄 PDF received:", pdf_file.filename if pdf_file else "No file")
+
+        if not pdf_file:
+            raise Exception("❌ No PDF file received in the request.")
 
         text = ""
         with fitz.open(stream=pdf_file.read(), filetype="pdf") as doc:
             for page in doc:
                 text += page.get_text()
 
+        print("✂️ Extracted text preview:", text[:100])
         input_text = text[:3000]
-        print("✂️ Extracted text:", input_text[:100])  # Preview for debugging
 
         prompt = f"""
 根據以下繁體中文內容，請生成三題選擇題，並用 HTML 格式輸出，具備良好排版與縮排，格式如下：
@@ -94,7 +97,7 @@ def upload():
         )
 
         generated_html = response.choices[0].message.content
-        print("✅ GPT Response OK")
+        print("✅ GPT output preview:", generated_html[:200])
 
         questions = parse_mcqs_from_html(generated_html)
         print("🧠 Parsed questions:", questions)
@@ -106,41 +109,6 @@ def upload():
 
     except Exception as e:
         print("❌ Exception occurred:", str(e))
-        return render_template("index.html", mcqs=None, sheet_url=None, error=str(e))
-
-
-
-        prompt = f"""
-根據以下繁體中文內容，請生成三題選擇題，並用 HTML 格式輸出，具備良好排版與縮排，格式如下：
-
-<div class="mcq">
-  <h3>問題：____</h3>
-  <ul>
-    <li><strong>A:</strong> ____</li>
-    <li><strong>B:</strong> ____</li>
-    <li><strong>C:</strong> ____</li>
-    <li><strong>D:</strong> ____</li>
-  </ul>
-  <p><strong>答案：</strong> __</p>
-</div>
-
-請不要加入說明文字或其他 HTML 元素。以下是內容：
-{input_text}
-"""
-
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-
-        generated_html = response.choices[0].message.content
-        questions = parse_mcqs_from_html(generated_html)
-        sheet_url = write_questions_to_new_sheet(questions)
-
-        return render_template("index.html", mcqs=generated_html, sheet_url=sheet_url, error=None)
-
-    except Exception as e:
         return render_template("index.html", mcqs=None, sheet_url=None, error=str(e))
 
 if __name__ == '__main__':
