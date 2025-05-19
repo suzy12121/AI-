@@ -52,6 +52,7 @@ def write_questions_to_new_sheet(questions, title_prefix="AI題庫"):
     rows = [[q["問題"], q["A"], q["B"], q["C"], q["D"], q["答案"]] for q in questions]
     worksheet.update(f"A2:F{len(rows)+1}", rows)
     return f"https://docs.google.com/spreadsheets/d/{sh.id}"
+
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
@@ -69,12 +70,50 @@ def upload():
                 text += page.get_text()
 
         print("✂️ Extracted text preview:", text[:100])
+        input_text = text[:3000]
 
-        return render_template("index.html", mcqs="<p>✅ Upload successful. Extracted text:</p><pre>" + text[:1000] + "</pre>", sheet_url=None, error=None)
+        prompt = f"""
+根據以下繁體中文內容，請生成三題選擇題，並用 HTML 格式輸出，具備良好排版與縮排，格式如下：
+
+<div class="mcq">
+  <h3>問題：____</h3>
+  <ul>
+    <li><strong>A:</strong> ____</li>
+    <li><strong>B:</strong> ____</li>
+    <li><strong>C:</strong> ____</li>
+    <li><strong>D:</strong> ____</li>
+  </ul>
+  <p><strong>答案：</strong> __</p>
+</div>
+
+請不要加入說明文字或其他 HTML 元素。以下是內容：
+{input_text}
+"""
+
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7
+        )
+
+        generated_html = response.choices[0].message.content
+        print("✅ GPT output preview:", generated_html[:200])
+
+        questions = parse_mcqs_from_html(generated_html)
+        print("🧠 Parsed questions:", questions)
+
+        if not questions:
+            raise Exception("GPT returned no valid questions. Try different input.")
+
+        sheet_url = write_questions_to_new_sheet(questions)
+        print("📤 Sheet created at:", sheet_url)
+
+        return render_template("index.html", mcqs=generated_html, sheet_url=sheet_url, error=None)
 
     except Exception as e:
         print("❌ Exception occurred:", str(e))
         return render_template("index.html", mcqs=None, sheet_url=None, error=str(e))
+
 
 
 if __name__ == '__main__':
